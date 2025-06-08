@@ -262,7 +262,7 @@ geneMat<-getGeneMat(df_gene)
 
 colnames(count_gesamt_df) <- c("_",c(as.list(sampleList )))
 rownames(count_gesamt_df)<-df_gene
-nrow(count_gesamt_df)
+#nrow(count_gesamt_df)
 
 
 
@@ -301,6 +301,9 @@ Nachdem wir die schwach exprimierten Gene entfernt haben können wir die Normali
 ## zwischen Proben beim Vergleich der Genexpressionsniveaus zu berücksichtigen. Sie normalisieren 
 ## die Rohlesezahlen und erleichtern so den Vergleich von Proben, die möglicherweise unterschiedlich sequenziert wurden.
 ##Insbesondere tragen Größenfaktoren dazu bei, die Verhältnisse der erwarteten Anzahlen für dasselbe Gen in verschiedenen Proben vergleichbar zu machen, selbst wenn diese Proben unterschiedliche Sequenzierungstiefen aufweisen
+# Schätze size factors
+dds <- estimateSizeFactors(dds)
+#sizeFactors(dds)
 
 
 #2. Schritt
