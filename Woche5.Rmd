@@ -1,0 +1,907 @@
+---
+title: "Untitled"
+output:
+  word_document: default
+  pdf_document: default
+date: "2025-05-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Install Packages}
+packages <- c(
+  "doMC",
+  "foreach",
+  "BiocParallel",
+  "UpSetR",
+  "genefilter",
+  "DESeq2",
+  "openxlsx",
+  "pheatmap",
+  "org.Hs.eg.db",
+  "ggplot2",
+  "FactoMineR",
+  "ggrepel",
+  "apeglm",
+  "viridis",
+  "tidyverse",
+  "kableExtra",
+  "pheatmap",
+  "EnhancedVolcano",
+  "msigdbr"
+)
+BiocManager::install(packages)
+```
+```{r Teil 1}
+
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.21")
+
+library(DESeq2)
+library(openxlsx)
+library(pheatmap)
+library(org.Hs.eg.db)
+library(ggplot2)
+library(FactoMineR)
+library(ggrepel)
+library(apeglm)
+library(ggrepel)
+library(viridis)
+library(tidyverse)
+library(kableExtra)
+library(pheatmap)
+library(genefilter)
+library(EnhancedVolcano)
+library(UpSetR)
+library(msigdbr)
+#library(doMC) # falls es hiermit Probleme gibt könnt ihr das Paket auch weglassen
+#library(foreach) # falls es hiermit Probleme gibt könnt ihr das Paket auch weglassen
+#library(BiocParallel) # falls es hiermit Probleme gibt könnt ihr das Paket auch weglassen
+# optional -> increase speed of analysis due to multicore processing
+#register(MulticoreParam(4)) # -> diese Zeile löschen, wenn es Probleme mit den Paketen doMC, foreach und/ oder BiocParallel gab
+
+
+```
+
+
+
+
+
+
+```{r Verzeicnisse}
+#getwd()
+#C:/Users/LeichtweissC.GSINET/OneDrive - delaware/Desktop/medizinischeInformatik/MIRACUM_BIDS_Bioinformatik_Systembiologie_RNA_Sequenzierung_Aufgabe"
+mainDir <- "C:/Users/LeichtweissC.GSINET/OneDrive -delaware/Desktop/medizinischeInformatik/MIRACUM_BIDS_Bioinformatik_Systembiologie_RNA_Sequenzierung_Aufgabe"
+analysisDir <- file.path(mainDir, "analysis")
+degDIR <- file.path(analysisDir, "DEG")
+gseaDIR <- file.path(analysisDir, "GSEA")
+gageDIR <- file.path(analysisDir, "GSEA", "GAGE")
+dir.create(degDIR, recursive = T)
+dir.create(gageDIR, recursive = T)
+
+```
+```{r genIds ermitteln}
+df_file_1 <- ((read_tsv("AS-876284-LR-66240_ReadsPerGene.out.tab"))%>%tail(.,-3))[1]
+
+ head(df_file_1)
+```
+
+
+```{r Count Matrix}
+get_df_from_file <- function(file) {
+  df_file <- read_tsv(file)%>%
+             tail(.,-3)
+
+#df_file_ready <-  df_file[, 1:2]
+df_file_ready <-  df_file[, 2]
+}
+
+
+ensembl2entrez <- function(ensembl) {
+  entrez <- mget(as.character(ensembl), org.Hs.egENSEMBL2EG, ifnotfound = NA)
+  entrez <- lapply(entrez, function(i) return(i[1]))
+  return(unlist(entrez))
+}
+
+entrez2ensembl <- function(entrez) {
+  esbl <- mget(as.character(entrez), org.Hs.egENSEMBL, ifnotfound = NA)
+  esbl <- lapply(esbl, function(i) return(i[1]))
+  return(unlist(esbl))
+}
+
+entrez2symbol <- function(entrez) {
+  symbol <- mget(as.character(entrez), org.Hs.egSYMBOL, ifnotfound = NA)
+  symbol <- unlist(lapply(symbol, function(i) return(i[1])))
+  return(symbol)
+}
+
+entrez2genename <- function(entrez) {
+  symbol <- mget(as.character(entrez), org.Hs.egGENENAME, ifnotfound = NA)
+  symbol <- unlist(lapply(symbol, function(i) return(i[1])))
+  return(symbol)
+}
+
+getGeneMat <- function(ensIDs) {
+  geneMat <- data.frame(ENSEMBL=ensIDs)
+  geneMat$ENTREZ <- ensembl2entrez(geneMat$ENSEMBL)
+  idxNA <- !is.na(geneMat$ENTREZ)
+  sym <- entrez2symbol(na.omit(geneMat$ENTREZ))
+  genename <- entrez2genename(na.omit(geneMat$ENTREZ))
+  geneMat$Symbol <- NA
+  geneMat$Symbol[idxNA] <- sym
+  geneMat$Genename <- NA
+  geneMat$Genename[idxNA] <- genename
+  rownames(geneMat) <- geneMat$ENSEMBL
+  return(geneMat)
+}
+
+
+ df_1_ready_n <- get_df_from_file("AS-876284-LR-66240_ReadsPerGene.out.tab")
+ df_2_ready_n <- get_df_from_file("AS-876285-LR-66240_ReadsPerGene.out.tab")
+ df_3_ready_n <- get_df_from_file("AS-876286-LR-66240_ReadsPerGene.out.tab")
+ df_4_ready_n <- get_df_from_file("AS-876287-LR-66240_ReadsPerGene.out.tab")
+ df_5_ready_n <- get_df_from_file("AS-876288-LR-66240_ReadsPerGene.out.tab")
+ df_6_ready_n <- get_df_from_file("AS-876289-LR-66240_ReadsPerGene.out.tab")
+
+count_gesamt_df<- cbind(df_1_ready_n, df_2_ready_n,df_3_ready_n,df_4_ready_n,df_5_ready_n,df_6_ready_n)
+count_gesamt_df[rowSums(count_gesamt_df) != 0, ]
+
+ 
+ target_df <- read.xlsx(xlsxFile = "targets.xlsx")
+
+sampleList <- target_df[, 'label']
+group <- target_df[, 'group']
+colnames(count_gesamt_df) <- c(as.list(sampleList ))
+#rownames(count_gesamt_d f)<-geneMat$ENSEMBL
+write_tsv(x = count_gesamt_df, file = "countMatrix.tab")
+
+
+
+```
+
+
+```{r Matri mit allen Genen}
+
+ensembl2entrez <- function(ensembl) {
+  entrez <- mget(as.character(ensembl), org.Hs.egENSEMBL2EG, ifnotfound = NA)
+  entrez <- lapply(entrez, function(i) return(i[1]))
+  return(unlist(entrez))
+}
+
+entrez2ensembl <- function(entrez) {
+  esbl <- mget(as.character(entrez), org.Hs.egENSEMBL, ifnotfound = NA)
+  esbl <- lapply(esbl, function(i) return(i[1]))
+  return(unlist(esbl))
+}
+
+entrez2symbol <- function(entrez) {
+  symbol <- mget(as.character(entrez), org.Hs.egSYMBOL, ifnotfound = NA)
+  symbol <- unlist(lapply(symbol, function(i) return(i[1])))
+  return(symbol)
+}
+
+entrez2genename <- function(entrez) {
+  symbol <- mget(as.character(entrez), org.Hs.egGENENAME, ifnotfound = NA)
+  symbol <- unlist(lapply(symbol, function(i) return(i[1])))
+  return(symbol)
+}
+
+getGeneMat <- function(ensIDs) {
+  geneMat <- data.frame(ENSEMBL=ensIDs)
+  geneMat$ENTREZ <- ensembl2entrez(geneMat$ENSEMBL)
+  idxNA <- !is.na(geneMat$ENTREZ)
+  sym <- entrez2symbol(na.omit(geneMat$ENTREZ))
+  genename <- entrez2genename(na.omit(geneMat$ENTREZ))
+  geneMat$Symbol <- NA
+  geneMat$Symbol[idxNA] <- sym
+  geneMat$Genename <- NA
+  geneMat$Genename[idxNA] <- genename
+  rownames(geneMat) <- geneMat$ENSEMBL
+  return(geneMat)
+}
+
+df_gene <- ((read_tsv("AS-876284-LR-66240_ReadsPerGene.out.tab"))%>%tail(.,-3))[[1]]
+geneMat<-(getGeneMat(df_gene))
+write_tsv(x = geneMat, file = "GenMatrix.tab")
+#head(geneMat)
+rownames(count_gesamt_df)<-df_gene
+
+
+
+```
+```{r Erstelle das DESeq2-Objekt}
+group <- unique(target_df[, 'group'])
+colnames(cts) = c(sampleList )
+cts <- count_gesamt_df[rowSums(count_gesamt_df) != 0, ]
+##colData <- data.frame(condition = factor(c("DM","DM","SO","SO","TR","TR")))
+colData <- data.frame(condition = factor(rep(c(group),each = 2)))
+
+rownames(colData) <- c(sampleList)
+
+dds <- DESeqDataSetFromMatrix(countData = cts,
+                                colData  = colData,
+                                design   = ~ condition)
+smallestGroupSize <- 2
+keep <- rowSums(counts(dds) >= 10) >= smallestGroupSize
+dds <- dds[keep,]
+cat(" Gesamtzahl Gene: ", numberGenesTotal)
+cat(" Gesamtzahl Gene nach Filterung : ", nrow(dds))
+cat(" Gesamtzahl eliminierter Gene  : ", numberGenesTotal-nrow(dds))
+```
+
+
+```{r Erstelle das DESeq2-Objekt}
+group <- unique(target_df[, 'group'])
+cts <- count_gesamt_df[rowSums(count_gesamt_df) != 0, ]
+samples <- data.frame(
+  row.names = c(sampleList ),
+  condition = factor(rep(c(group),each = 2))
+)
+
+dds <- DESeqDataSetFromMatrix(
+  countData = cts,
+  colData = samples,
+  design = ~ condition
+)
+
+```
+
+
+```{r Size Factors, Dispersion, Wald test }
+## Ziel: Normalisierung der Daten
+
+## 1. Schritt: Size Faktoren bestimmen
+## In der DNA-Analyse werden Größenfaktoren verwendet, um Unterschiede in der Sequenzierungstiefe 
+## zwischen Proben beim Vergleich der Genexpressionsniveaus zu berücksichtigen. Sie normalisieren 
+## die Rohlesezahlen und erleichtern so den Vergleich von Proben, die möglicherweise unterschiedlich sequenziert wurden.
+##Insbesondere tragen Größenfaktoren dazu bei, die Verhältnisse der erwarteten Anzahlen für dasselbe Gen in verschiedenen Proben vergleichbar zu machen, selbst wenn diese Proben unterschiedliche Sequenzierungstiefen aufweisen
+
+
+#2. Schritt
+#'Schätze Dispersion
+#n RNA-Sequenzierung (RNA-Seq) ist Dispersion ein Maß dafür, wie sehr die Anzahl der Reads (Sequenzfragmente)
+#für ein Gen zwischen verschiedenen Proben variiert, 
+
+# Schätze size factors
+dds <- estimateSizeFactors(dds)
+
+
+# Schätze Dispersion
+
+dds <- estimateDispersions(dds)
+plotDispEsts(dds)
+
+
+# Führe Wald Test durch
+dds <- nbinomWaldTest(dds)
+#plotMA(dds)
+
+# rlog-Transformation, behalte Gruppeninformation
+## assay data (here, the counts)
+rld <- rlog(dds, blind = FALSE)
+rld <- rlog(dds)
+
+rlog_matrix <- assay(rld)
+head(rlog_matrix) 
+
+dds <- DESeq(dds)
+res <- results(dds)
+
+```
+
+
+```{r Boxplot unnormalisierte / normalisierte Daten}
+install.packages("RColorBrewer")
+library(RColorBrewer)
+
+df_prep <- function(df_org,anz_zeilen,proben_nr) {
+  cond_f <- (colnames(df_org))[proben_nr]
+  sp_1_f <- df_org[,proben_nr]
+  sp_2_f <- rep(cond_f, anz_zeilen)
+  
+  df_cond_f <- data.frame(sp_1_f, sp_2_f)
+}
+farben <- brewer.pal(6, "Set2")
+
+raw_counts <- counts(dds)
+
+# Log2 transformieren
+log_raw <- log2(raw_counts + 1)
+
+# Daten vorbereiten zur Visualisierung
+df_probe_1 <- df_prep(raw_counts,nrow(log_raw),1)
+df_probe_2 <- df_prep(raw_counts,nrow(log_raw),2)
+df_probe_3 <- df_prep(raw_counts,nrow(log_raw),3)
+df_probe_4 <- df_prep(raw_counts,nrow(log_raw),4)
+df_probe_5 <- df_prep(raw_counts,nrow(log_raw),5)
+df_probe_6 <- df_prep(raw_counts,nrow(log_raw),6)
+log_to_plot_df <- rbind(df_probe_1, df_probe_2,df_probe_3,df_probe_4,df_probe_5,df_probe_6)
+colnames(log_to_plot_df) <- c("log2count","Probe")
+##head(log_to_plot_df)
+
+ggplot(log_to_plot_df, aes(x=Probe, y=log2count, fill=Probe)) + 
+geom_boxplot(outlier.size = 0.3) +
+theme_bw() +
+#scale_fill_manual(values = c("red", "blue", "green", "orange", "purple", "cyan")) +
+   scale_fill_manual(values = farben) +
+labs(title = "Counts (trans) pro Bedingung vor Normalisierung",
+       x = "Probe", y = "Counts (trans)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ 
+
+  
+## Normalisierte Counts extrahieren
+norm_counts <- counts(dds, normalized = TRUE)
+
+# Log2 transformieren
+log_norm <- log2(norm_counts + 1)
+
+# Daten für ggplot umformen
+
+df_probe_1_ln <- df_prep(log_norm,nrow(log_norm),1)
+df_probe_2_ln <- df_prep(log_norm,nrow(log_norm),2)
+df_probe_3_ln <- df_prep(log_norm,nrow(log_norm),3)
+df_probe_4_ln <- df_prep(log_norm,nrow(log_norm),4)
+df_probe_5_ln <- df_prep(log_norm,nrow(log_norm),5)
+df_probe_6_ln <- df_prep(log_norm,nrow(log_norm),6)
+
+log_to_plot_ln_df <- rbind(df_probe_1_ln, df_probe_2_ln,df_probe_3_ln,df_probe_4_ln,df_probe_5_ln,df_probe_6_ln)
+colnames(log_to_plot_ln_df) <- c("log2count","Probe")
+
+ggplot(log_to_plot_ln_df, aes(x=Probe, y=log2count, fill=Probe)) + 
+geom_boxplot(outlier.size = 0.3) +
+scale_fill_manual(values = c("red", "blue", "green", "orange", "purple", "cyan")) +
+theme_bw() +
+labs(title = "Counts (trans) pro Bedingung nach Normalisierung",
+       x = "Probe", y = "Counts (trans)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r PCA erstellen }
+
+install.packages("FactoMineR")
+install.packages("ggplot2")
+install.packages("factoextra")  # optional für visuelle Extras
+
+library(FactoMineR)
+library(ggplot2)
+library(factoextra)
+
+# Verwende rlog Werte
+# rlog-Transformation (nur zur Erinnerung)
+ rlog_data <- rlog(dds, blind = TRUE)
+ # rlog-Matrix extrahieren
+expr_matrix <- assay(rlog_data)  # Gene = Zeilen, Proben = Spalten
+
+# Transponieren: Proben als Zeilen, Gene als Spalten
+expr_t <- t(expr_matrix)
+
+#PCA mit Factor Mine 
+# PCA durchführen mit Proben als Individuals
+pca <- PCA(expr_t, graph = FALSE, scale.unit = TRUE)
+
+#Indiciduals Graph Plotten
+
+# Koordinaten der Proben auf den ersten beiden PCs extrahieren
+ind_coords <- as.data.frame(pca$ind$coord)
+ind_coords$Sample <- rownames(ind_coords)
+
+# Optional: Metadaten hinzufügen (z.B. Bedingung, Gruppe)
+# metadata <- colData(rlog_data)  # falls vorhanden
+# ind_coords$Condition <- metadata$condition
+
+# Plot mit ggplot2
+ggplot(ind_coords, aes(x = Dim.1, y = Dim.2, label = Sample)) +
+  geom_point(size = 3, color = "steelblue") +
+  geom_text(vjust = -0.5, size = 3) +
+  labs(title = "PCA – Individuals Graph (Proben)",
+       x = paste0("PC1 (", round(pca$eig[1,2], 1), "%)"),
+       y = paste0("PC2 (", round(pca$eig[2,2], 1), "%)")) +
+  theme_minimal()
+
+#Plot Exportieren
+
+
+```
+```{r Überprüfe PCA Achsenbeschriftung}
+# Achsenbeschriftung
+pca$eig  # Zeigt Varianz und kumulierte Varianz jeder Dimension
+#Faustregel: PC1 + PC2 sollten im Idealfall >50 % der Gesamtvarianz erklären, aber das hängt stark vom Datentyp ab.
+# ANTWORT: Faustregel stimmt
+
+
+```
+
+
+```{r Clustering nach Gruppen}
+#Clustern die Proben erwartungsgemäß?
+#Wenn du z. B. Kontroll- und Behandlungsgruppen hast, sollten sich ähnliche Proben gruppieren.
+ condition = factor(rep(c(group),each = 2))
+
+ggplot(ind_coords, aes(x = Dim.1, y = Dim.2, color = condition)) +
+  geom_point()
+# Anwort: nur bei SO ist Gruppierung erkennbar 
+```
+
+
+```{r Scree Plot}
+#Scree Plot: Erklärt, wie viel jede PC beiträgt
+fviz_eig(pca)
+# Man sieht, dass die ersten beiden PC den meisten Teil der Varianz erklären  ( der größte Knick ist zwischen der ersten und der zweiten Komponente)
+
+```
+```{r Plot mit Gen Variablen}
+##fviz_pca_biplot(pca, repel = TRUE)
+# Paket installieren, falls noch nicht installiert
+if (!requireNamespace("SummarizedExperiment", quietly = TRUE)) {
+  install.packages("SummarizedExperiment")
+}
+
+# Paket laden
+library(SummarizedExperiment)
+
+install.packages("FactoMineR")
+install.packages("ggplot2")
+install.packages("factoextra")  # optional für visuelle Extras
+
+library(FactoMineR)
+library(ggplot2)
+library(factoextra)
+install.packages("BiocManager")
+BiocManager::install("DESeq2")
+
+library(DESeq2)
+
+# Verwende rlog Werte
+# rlog-Transformation (nur zur Erinnerung)
+ rlog_data <- rlog(dds, blind = TRUE)
+
+
+high_var_genes <- head(order(apply(assay(rlog_data), 1, var), decreasing = TRUE), 15)
+pca_subset <- PCA(t(assay(rlog_data)[high_var_genes, ]), graph = FALSE)
+fviz_pca_biplot(pca_subset)
+#ENSG00000227268	100144748	KLLN	killin, p53 regulated DNA replication inhibitor (zeigt nach unten)
+
+
+```
+
+
+
+```{r Vorarbeiten Export relevanter Gene SO vs DMSO}
+res <- results(dds, name="condition_Sorafenib_vs_DMSO")
+
+resLFC_SO <- lfcShrink(dds, coef="condition_Sorafenib_vs_DMSO", type="apeglm")
+resLFC_SO
+
+resLFC_TR <- lfcShrink(dds, coef="condition_Trametinib_vs_DMSO", type="apeglm")
+resLFC_TR
+write.csv(resLFC_SO, file = "resLFC_SO.tab")
+
+
+```
+
+
+```{r Extrahiere relevante Gene Ergebnisse Gene SO vs DMSO}
+get_vul_daten <- function (df_daten) {
+  df_sel <- data.frame(df_daten[, 2], df_daten[, 3], df_daten[, 5])
+  df_sel %>%
+    mutate(across(where(is.numeric), ~ replace_na(., 0))) %>%
+    filter(df_daten[, 5] < 0.05)
+  
+  
+}
+add_gene_id <- function(df, col_name = "ENSEMBL") {
+  for (i in 1:nrow(df)) {
+    aktuelle_zeile_name <- rownames(df)[i]
+    
+  }
+  df$ENSEMBL <- rownames(df)
+  colnames(df) <- c("log2FoldChange", "lfcSE", "padj", "ENSEMBL")
+  return(df)
+}
+
+printTable <- function(df, anz_ges, probe) {
+  df_up <- select(df, Symbol, log2FoldChange, padj)
+  df_up_ohne_na <- drop_na(df_up)
+  kable(
+    df_up_ohne_na[, c("Symbol", "log2FoldChange", "padj")],
+    row.names = FALSE,
+    "html",
+    col.names = c("Symbol", "log2FC", "adj. p-value"))  %>%
+    kable_styling() %>%
+    scroll_box(width = "100%", height = "800px")
+  
+  cat("\ Ergebniss ", probe, ":")
+  cat("\n Anzahl Gene gesamt : ", anz_ges)
+  cat("\n Anzahl Gene nach Filterung adju p Wert : ", nrow(df_up))
+  cat(
+    "\n  Anzahl Zeilen filterung adju p Wert und  Löschen fehlender  Symbole: ",
+    nrow(df_up_ohne_na)
+  )
+  return (df_up_ohne_na)
+}
+
+
+df_1 <- get_vul_daten(resLFC_SO)
+df_2 <- add_gene_id(df_1)
+df_3 <- inner_join(x = df_2,
+                   y = geneMat,
+                   by = c("ENSEMBL" = "ENSEMBL")) %>%
+  select(ENSEMBL, Symbol, log2FoldChange, lfcSE, padj)
+
+df_4 <- printTable(df_3, nrow(resLFC_SO), "SO gegen DMSO")
+df_res_SO <- df_4$minus_log10_p <- -log10(df_4$padj)
+df_res_SO <- df_4
+
+cat("\n log 10 padj max ", log10(max(df_res_SO$padj)))
+cat("\n log 10 padj min  ", log10(min(df_res_SO$padj)))
+#write.csv(df_res_SO, file = "df_res_SO.tab")
+```
+
+
+```{r Extrahiere relevante Gene Ergebnisse Gene TR vs DMSO}
+df_TR_1<- get_vul_daten(resLFC_TR)
+
+df_TR_2<-add_gene_id(df_TR_1)
+df_TR_3 <- inner_join(x=df_TR_2,
+          y=geneMat, 
+             by=c("ENSEMBL"= "ENSEMBL"))%>%
+            select(ENSEMBL,Symbol,log2FoldChange,lfcSE,padj)
+
+df_TR_4<- printTable(df_TR_3,nrow(resLFC_TR),"TR gegen DMSO")
+df_TR_4$minus_log10_p <- -log10(df_TR_4$padj)
+df_res_TR <- df_TR_4
+```
+x
+
+```{r Vulcano für zwei Vergleiche  mit Enhanched Volcano}
+if (!requireNamespace('BiocManager', quietly = TRUE))
+    install.packages('BiocManager')
+
+  BiocManager::install('EnhancedVolcano')
+
+library(EnhancedVolcano)
+#   head(df_res_SO)
+#   #df_to_plot <- subset(df_res_SO, padj < 0.05 & abs(log2FoldChange) > 1)
+#   df_to_plot <- df_res_SO
+# EnhancedVolcano(df_to_plot,
+#     lab = df_to_plot$Symbol,
+#     x = 'log2FoldChange',
+#     y = 'padj',
+#     title = 'DMSO vers SO',
+# #    pCutoff = 10e-12,
+#     pCutoff = 10e-20,
+#     FCcutoff = 1.5,
+#     cutoffLineType = 'twodash',
+#     cutoffLineWidth = 0.8,
+#     pointSize = 4.0,
+#     labSize = 6.0,
+#     colAlpha = 1,
+#     legendLabels=c('Not sig.','Log (base 2) FC','p-value',
+#       'p-value & Log (base 2) FC'),
+#     legendPosition = 'right',
+#     legendLabSize = 16,
+#     legendIconSize = 5.0)
+
+do_plot <-function(df,t){
+  EnhancedVolcano(df,
+    lab = df$Symbol,
+    x = 'log2FoldChange',
+    y = 'padj',
+    title = t,
+#    pCutoff = 10e-12,
+    pCutoff = 10e-20,
+    FCcutoff = 1.5,
+    cutoffLineType = 'twodash',
+    cutoffLineWidth = 0.8,
+    pointSize = 2,
+    labSize = 6.0,
+    colAlpha = 1,
+    legendLabels=c('Not sig.','Log (base 2) FC','p-value',
+      'p-value & Log (base 2) FC'),
+    legendPosition = 'right',
+    legendLabSize = 16,
+    legendIconSize = 5.0)
+}
+do_plot(df_res_SO,'SO vers DMSO')
+do_plot(df_res_TR,'TR vers DMSO')
+    
+```
+
+
+```{r Plot Ergebnisse Gene SO vs DMSO}
+library(ggplot2)
+library(ggrepel)
+
+
+# Erstelle den Volcano Plot
+ggplot(df_res_SO, aes(x=log2FoldChange, y=minus_log10_p)) +
+  geom_point(alpha=0.6, size=1.5) +
+  # Optional: Farben nach Signifikanz
+  aes(color=padj < 0.05) +
+  scale_color_manual(values=c("red", "grey")) +
+  # Textlabels für signifikante Gene
+  geom_text_repel(
+    #data=subset(df_res_SO, padj < 0.001 & abs(log2FoldChange) > 1),
+    data=subset(df_res_SO, padj < 0.05 & abs(log2FoldChange) > 1),
+    aes(label=Symbol),
+    size=3,
+    max.overlaps=10
+  )
+```
+
+
+```{r Plot Ergebnisse Gene TR vs DMSO}
+ggplot(df_res_TR, aes(x=log2FoldChange, y=minus_log10_p)) +
+  geom_point(alpha=0.6, size=1.5) +
+  # Optional: Farben nach Signifikanz
+  aes(color=padj < 0.05) +
+  scale_color_manual(values=c("blue", "grey")) +
+  # Textlabels für signifikante Gene
+  geom_text_repel(
+    #data=subset(df_res_SO, padj < 0.001 & abs(log2FoldChange) > 1),
+    data=subset(df_res_TR, padj < 0.05 & abs(log2FoldChange) > 1),
+    aes(label=Symbol),
+    size=3,
+    max.overlaps=10
+  )
+```
+
+
+```{r Vulcano up / down / nicht sign  SO}
+res_df <- df_res_SO[!is.na(df_res_SO$padj), ]
+
+# Kategorien erstellen
+res_df$regulation <- "not_significant"  # Standard
+res_df$regulation[res_df$log2FoldChange > 0 & res_df$padj < 0.05] <- "up"
+res_df$regulation[res_df$log2FoldChange < 0 & res_df$padj < 0.05] <- "down"
+
+# Ergebnisse prüfen
+table(res_df$regulation)
+
+# Optional: separate DataFrames
+deg_up   <- subset(res_df, regulation == "up")
+deg_down <- subset(res_df, regulation == "down")
+deg_ns   <- subset(res_df, regulation == "not_significant")
+
+# Optional: nach Effektstärke sortieren
+deg_up   <- deg_up[order(-deg_up$log2FoldChange), ]
+deg_down <- deg_down[order(deg_down$log2FoldChange), ]
+
+##Plot
+
+#Zeige Top Gene mit Beschriftung (z. B. Top 10 nach padj)
+top_genes <- res_df[res_df$padj < 0.05, ]
+top_genes <- top_genes[order(top_genes$padj), ][1:10, ]
+
+ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = regulation)) +
+  geom_point(alpha = 0.7, size = 2) +
+  scale_color_manual(values = c("up" = "red", "down" = "blue", "not_significant" = "gray")) +
+  labs(
+    title = "Volcano Plot mit Top Genen SO versus DMSO",
+    x = "log2 Fold Change",
+    y = "-log10 adjusted p-value",
+    color = "Regulation"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed", color = "black") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
+  geom_text_repel(data = top_genes, aes(label = Symbol), size = 3)
+```
+  labs(
+    title = "Volcano Plot mit Top Genen SO versus DMSO",
+    x = "log2 Fold Change",
+    y = "-log10 adjusted p-value",
+    color = "Regulation"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed", color = "black") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
+  geom_text_repel(data = top_genes, aes(label = Symbol), size = 3)
+
+
+```{r  Verteilung der Gene up / down / nicht sign  SO}
+# Anzahl aller signifikant regulierten Gene
+sig_total <- sum(res_df$padj < 0.05, na.rm = TRUE)
+
+# Aufteilung nach Regulation
+table(res_df$regulation)
+# in Prozent umrechnen
+round(prop.table(table(res_df$regulation)) * 100, 1)
+
+#Visualisierung als Balken diagram
+library(ggplot2)
+
+# Daten vorbereiten
+reg_counts <- as.data.frame(table(res_df$regulation))
+colnames(reg_counts) <- c("Regulation", "Count")
+
+# Plot
+ggplot(reg_counts, aes(x = Regulation, y = Count, fill = Regulation)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue", "not_significant" = "gray")) +
+  labs(title = "Verteilung der differentiell exprimierten Gene",
+       x = "Regulationsrichtung",
+       y = "Anzahl Gene") +
+  theme_minimal()
+
+
+ggplot(reg_counts, aes(x = Regulation, y = Count, fill = Regulation)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = Count), vjust = -0.3) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue", "not_significant" = "gray")) +
+  labs(title = "Verteilung der differentiell exprimierten Gene SO versus DMO",
+       x = "Regulationsrichtung",
+       y = "Anzahl Gene") +
+  theme_minimal()
+
+
+```
+
+
+```{r Vulcano up / down / nicht sign  TR}
+res_df <- df_res_TR[!is.na(df_res_TR$padj), ]
+
+# Kategorien erstellen
+res_df$regulation <- "not_significant"  # Standard
+res_df$regulation[res_df$log2FoldChange > 0 & res_df$padj < 0.05] <- "up"
+res_df$regulation[res_df$log2FoldChange < 0 & res_df$padj < 0.05] <- "down"
+
+# Ergebnisse prüfen
+table(res_df$regulation)
+
+# Optional: separate DataFrames
+deg_up   <- subset(res_df, regulation == "up")
+deg_down <- subset(res_df, regulation == "down")
+deg_ns   <- subset(res_df, regulation == "not_significant")
+
+# Optional: nach Effektstärke sortieren
+deg_up   <- deg_up[order(-deg_up$log2FoldChange), ]
+deg_down <- deg_down[order(deg_down$log2FoldChange), ]
+
+##Plot
+
+
+library(ggrepel)  # Falls noch nicht installiert: install.packages("ggrepel")
+
+# Zeige Top Gene mit Beschriftung (z. B. Top 10 nach padj)
+top_genes <- res_df[res_df$padj < 0.05, ]
+top_genes <- top_genes[order(top_genes$padj), ][1:10, ]
+
+ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = regulation)) +
+  geom_point(alpha = 0.7, size = 2) +
+  scale_color_manual(values = c("up" = "red", "down" = "blue", "not_significant" = "gray")) +
+  labs(
+    title = "Volcano Plot mit Top Genen TR versus DMSO",
+    x = "log2 Fold Change",
+    y = "-log10 adjusted p-value",
+    color = "Regulation"
+  ) +
+  theme_minimal() +
+  geom_vline(xintercept = c(-1, 1), linetype = "dashed", color = "black") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
+  geom_text_repel(data = top_genes, aes(label = Symbol), size = 3)
+```
+
+
+```{r # Anzahl aller signifikant regulierten Gene bei TR}
+sig_total <- sum(res_df$padj < 0.05, na.rm = TRUE)
+
+# Aufteilung nach Regulation
+table(res_df$regulation)
+# in Prozent umrechnen
+round(prop.table(table(res_df$regulation)) * 100, 1)
+
+#Visualisierung als Balken diagram
+library(ggplot2)
+
+# Daten vorbereiten
+reg_counts <- as.data.frame(table(res_df$regulation))
+colnames(reg_counts) <- c("Regulation", "Count")
+
+# Plot
+ggplot(reg_counts, aes(x = Regulation, y = Count, fill = Regulation)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue", "not_significant" = "gray")) +
+  labs(title = "Verteilung der differentiell exprimierten Gene TR versus DSMO",
+       x = "Regulationsrichtung",
+       y = "Anzahl Gene") +
+  theme_minimal()
+
+
+ggplot(reg_counts, aes(x = Regulation, y = Count, fill = Regulation)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = Count), vjust = -0.3) +
+  scale_fill_manual(values = c("up" = "red", "down" = "blue", "not_significant" = "gray")) +
+  labs(title = "Verteilung der differentiell exprimierten Gene TR versus DSMO (in %)",
+       x = "Regulationsrichtung",
+       y = "Anzahl Gene") +
+  theme_minimal()
+```
+
+```{r Wie verteilt sich die Anzahl hoch und runterregulierter Gene SO gegen DMSO}
+
+get_html_table <- function (df){
+  kable(df[, c("Symbol", "log2FoldChange", "padj")], row.names = FALSE, "html", col.names = c("Symbol", "log2FC", "adj. p-value"))  %>% 
+kable_styling() %>%
+scroll_box(width = "100%", height = "800px")
+
+}
+
+get_html_Spalte <- function (df){
+  kable(df[, c("Symbol")], row.names = FALSE, "html", col.names = c("Symbol"))  %>% 
+kable_styling() %>%
+scroll_box(width = "100%", height = "800px")
+
+}
+df_res <- df_res_SO
+res_down_SO <- df_res[which(df_res$log2FoldChange < 0 & df_res$padj < 0.05), ]
+res_up_SO <- df_res[which(df_res$log2FoldChange > 0 & df_res$padj < 0.05), ]
+
+hoch <- sum(df_res$log2FoldChange > 0)
+runter <- sum(df_res$log2FoldChange < 0)
+
+q<-hoch/ runter
+
+cat("Hochreguliert bei SO :", hoch, "\nRunterreguliert bei SO :", runter, " \n Verhältnis hoch zu runter ",q)
+
+```
+
+
+```{r Wie verteilt sich die Anzahl hoch und runterregulierter Gene TR gegen DMSO}
+df_res <- df_res_TR
+res_down_TR <- df_res[which(df_res$log2FoldChange < 0 & df_res$padj < 0.05), ]
+res_up_TR <- df_res[which(df_res$log2FoldChange > 0 & df_res$padj < 0.05), ]
+
+hoch <- sum(df_res$log2FoldChange > 0)
+runter <- sum(df_res$log2FoldChange < 0)
+
+q<-hoch/ runter
+
+cat("Hochreguliert bei TR :", hoch, "\nRunterreguliert bei SO :", runter, " \n Verhältnis hoch zu runter ",q)
+#get_html_table(res_up_TR)
+#get_html_table(res_down_TR)
+
+```
+
+
+```{r Gene , die von beiden Medikamenten hhochreguliert werden }
+
+sp_SO <- res_up_SO$Symbol
+sp_TR <- res_up_TR$Symbol
+intersection_vector <- intersect(sp_SO, sp_TR)
+df_common_up <- data.frame( intersect(sp_SO, sp_TR))
+colnames(df_common_up)<- c("Symbol")
+#head(df_common_up)
+
+get_html_Spalte(df_common_up)
+```
+
+
+```{r Gene , die von beiden Medikamenten runterreguliert werden }
+sp_SO <- res_down_SO$Symbol
+sp_TR <- res_down_TR$Symbol
+intersection_vector <- intersect(sp_SO, sp_TR)
+df_down_up <- data.frame( intersect(sp_SO, sp_TR))
+colnames(df_down_up)<- c("Symbol")
+
+#get_html_Spalte(df_down_up)
+```
+
+
+
+
+```
+
+
+
+
+```
+
+
