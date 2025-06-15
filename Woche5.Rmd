@@ -88,7 +88,6 @@ dir.create(gageDIR, recursive = T)
 ```{r genIds ermitteln}
 df_file_1 <- ((read_tsv("AS-876284-LR-66240_ReadsPerGene.out.tab"))%>%tail(.,-3))[1]
 
- head(df_file_1)
 ```
 
 
@@ -167,44 +166,6 @@ write_tsv(x = count_gesamt_df, file = "countMatrix.tab")
 
 ```{r Matri mit allen Genen}
 
-ensembl2entrez <- function(ensembl) {
-  entrez <- mget(as.character(ensembl), org.Hs.egENSEMBL2EG, ifnotfound = NA)
-  entrez <- lapply(entrez, function(i) return(i[1]))
-  return(unlist(entrez))
-}
-
-entrez2ensembl <- function(entrez) {
-  esbl <- mget(as.character(entrez), org.Hs.egENSEMBL, ifnotfound = NA)
-  esbl <- lapply(esbl, function(i) return(i[1]))
-  return(unlist(esbl))
-}
-
-entrez2symbol <- function(entrez) {
-  symbol <- mget(as.character(entrez), org.Hs.egSYMBOL, ifnotfound = NA)
-  symbol <- unlist(lapply(symbol, function(i) return(i[1])))
-  return(symbol)
-}
-
-entrez2genename <- function(entrez) {
-  symbol <- mget(as.character(entrez), org.Hs.egGENENAME, ifnotfound = NA)
-  symbol <- unlist(lapply(symbol, function(i) return(i[1])))
-  return(symbol)
-}
-
-getGeneMat <- function(ensIDs) {
-  geneMat <- data.frame(ENSEMBL=ensIDs)
-  geneMat$ENTREZ <- ensembl2entrez(geneMat$ENSEMBL)
-  idxNA <- !is.na(geneMat$ENTREZ)
-  sym <- entrez2symbol(na.omit(geneMat$ENTREZ))
-  genename <- entrez2genename(na.omit(geneMat$ENTREZ))
-  geneMat$Symbol <- NA
-  geneMat$Symbol[idxNA] <- sym
-  geneMat$Genename <- NA
-  geneMat$Genename[idxNA] <- genename
-  rownames(geneMat) <- geneMat$ENSEMBL
-  return(geneMat)
-}
-
 df_gene <- ((read_tsv("AS-876284-LR-66240_ReadsPerGene.out.tab"))%>%tail(.,-3))[[1]]
 geneMat<-(getGeneMat(df_gene))
 write_tsv(x = geneMat, file = "GenMatrix.tab")
@@ -216,12 +177,11 @@ rownames(count_gesamt_df)<-df_gene
 ```
 ```{r Erstelle das DESeq2-Objekt}
 group <- unique(target_df[, 'group'])
-colnames(cts) = c(sampleList )
-cts <- count_gesamt_df[rowSums(count_gesamt_df) != 0, ]
-##colData <- data.frame(condition = factor(c("DM","DM","SO","SO","TR","TR")))
-colData <- data.frame(condition = factor(rep(c(group),each = 2)))
 
+cts <- count_gesamt_df[rowSums(count_gesamt_df) != 0, ]
+colData <- data.frame(condition = factor(rep(c(group),each = 2)))
 rownames(colData) <- c(sampleList)
+colnames(cts) = c(sampleList )
 
 dds <- DESeqDataSetFromMatrix(countData = cts,
                                 colData  = colData,
@@ -234,22 +194,6 @@ cat(" Gesamtzahl Gene nach Filterung : ", nrow(dds))
 cat(" Gesamtzahl eliminierter Gene  : ", numberGenesTotal-nrow(dds))
 ```
 
-
-```{r Erstelle das DESeq2-Objekt}
-group <- unique(target_df[, 'group'])
-cts <- count_gesamt_df[rowSums(count_gesamt_df) != 0, ]
-samples <- data.frame(
-  row.names = c(sampleList ),
-  condition = factor(rep(c(group),each = 2))
-)
-
-dds <- DESeqDataSetFromMatrix(
-  countData = cts,
-  colData = samples,
-  design = ~ condition
-)
-
-```
 
 
 ```{r Size Factors, Dispersion, Wald test }
@@ -293,6 +237,8 @@ dds <- DESeq(dds)
 res <- results(dds)
 
 ```
+
+
 
 
 ```{r Boxplot unnormalisierte / normalisierte Daten}
