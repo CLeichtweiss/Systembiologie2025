@@ -20,7 +20,9 @@ editor: visual
 
 # Einführung
 
-Wir bitten euch hier, die grundlegenden Schritte einer RNA-Sequenzierungs-Analyse durchzuführen. Wir stellen euch bereits die auf das menschliche Referenzgenom ausgerichteten Reads zur Verfügung, d.h. euer Ausgangspunkt sind die "Raw Counts" für alle Gene jeder Probe. Zusammen mit den Counts stellen wir euch die Annotationstabelle zur Verfügung, die die Proben-IDs mit den tatsächlichen biologischen Bedingungen verknüpft. Der Datensatz stammt aus einem wissenschaftlichen Projekt, an dem wir hier in Freiburg arbeiten. Der Datensatz enthält Expressionsdaten eines Rektumadenokarzinoms, welches Varianten in ***BRAF^D594G^***, ***KRAS^G12A^*** und ***TP53^R175H^*** trägt. Mit dem RNA-Seq-Experiment soll untersucht werden, welchen Einfluss die Medikamente **Sorafenib** und **Trametinib** auf das Expressionsmuster der Tumorzellen haben. Um die Vergleiche vornehme zu können wurde ebenfalls eine Kontrollprobe mit **Dimethylsulfoxid** (DMSO) generiert. DMSO wurde gewählt, da die Medikamente darin gelöst sind, um sie den Zellen zuverabreichen. Wir betrachten im folgenden also die biologischen Bedingungen **DMSO**, **Sorafenib** (Sora) und **Trametinib** (Tram). Für alle Bedingungen liegen zwei biologische Replikate vor.
+Wir bitten euch hier, die grundlegenden Schritte einer RNA-Sequenzierungs-Analyse durchzuführen. Wir stellen euch bereits die auf das menschliche Referenzgenom ausgerichteten Reads zur Verfügung, d.h. euer Ausgangspunkt sind die "Raw Counts" für alle Gene jeder Probe. Zusammen mit den Counts stellen wir euch die Annotationstabelle zur Verfügung, die die Proben-IDs mit den tatsächlichen biologischen Bedingungen verknüpft. Der Datensatz stammt aus einem wissenschaftlichen Projekt, an dem wir hier in Freiburg arbeiten. Der Datensatz enthält Expressionsdaten eines Rektumadenokarzinoms, welches Varianten in ***BRAF^D594G^***, ***KRAS^G12A^*** und ***TP53^R175H^*** trägt. Mit dem RNA-Seq-Experiment soll untersucht werden, welchen Einfluss die Medikamente **Sorafenib** und **Trametinib** auf das Expressionsmuster der Tumorzellen haben. Um die Vergleiche vornehme zu können wurde ebenfalls eine Kontrollprobe mit **Dimethylsulfoxid** (DMSO) generiert. DMSO wurde gewählt, da die Medikamente darin gelöst sind, um sie den Zellen zuverabreichen. Wir betrachten im folgenden also die biologischen Bedingungen **DMSO**, n
+
+**Sorafenib** (Sora) und **Trametinib** (Tram). Für alle Bedingungen liegen zwei biologische Replikate vor.
 
 Das Ziel dieser Aufgabe ist es die signifikant veränderten Gene zwischen der Kontrolle (DMSO) und den beiden Behandlungen (Sora und Tram) zu finden. Des weiteren interssiert uns auch, ob es Unterschiede zwischen den Behandlungen gibt. Dabei hilft uns in beiden Fällen die Analyse der differentiell exprimierten Gene (DEG).
 
@@ -110,6 +112,8 @@ library(msigdbr)
 # optional -> increase speed of analysis due to multicore processing
 #register(MulticoreParam(4)) # -> diese Zeile löschen, wenn es Probleme mit den Paketen doMC, foreach und/ oder BiocParallel gab
 ```
+
+n
 
 Hinweis: Falls diese nicht installiert sind, können sie mit dem Paketmanager von [bioconductor](https://www.bioconductor.org/install/) `BiocManager::install()` oder `install.packages()` installiert werden.
 
@@ -292,15 +296,15 @@ Wir wollen untersuchen, ob die Gabe von Sora oder Tram eine statatisch sign. Ver
 
 Grundsätzlich kann man zwei Verteilungen der RNA Zählwerten (RNA Zählwerte geben an, wieviel RNA Moleküle eines bestimmten Gens in einer Probe gefunden wurden) betrachten: Die Verteilung der RNA Zählwerte innerhalbe einer Probe und die Verteilung der Werte zwischen einzelnen Proben.
 
-Die Verteilung zwischen den Proben kann sich je nach Zelltyp, Zustand, Behandlung etc. ändern. Dies kann man ausnutzen, um beispielsweise zu überprüfen , wie sich versch. Medikamente auf die Expression bestimmter Gene auswirken,.
+Die Verteilung zwischen den Proben kann sich je nach Zelltyp, Zustand, Behandlung etc. ändern. Dies kann man ausnutzen, um beispielsweise zu überprüfen , wie sich versch. Medikamente auf die Expression bestimmter Gene auswirken.
 
-Ebenso variert die Anzahl exprimierter Gene Innerhalb der Probe. Es gibt sehr viele Gene , die eine geringe Anzahl der Counts aufweise, wohin gegen wenige Gene in hoher Zahl exprimiert sind. Dadurch erhalten wir eine rechtschiefe Verteilung, also keine Normalverteilung. Die Varianz in RNA Experimenten ist ebenfalls sehr groß. Dieses Phänomen ist auch als Overdispersion bekannt. Dieses Phänoment konnten wir an unserem Datensatz gut erkennen( siehe Zusatzinfo)
+Ebenso variert die Anzahl exprimierter Gene Innerhalb der Probe. Es gibt sehr viele Gene , die eine geringe Anzahl der Counts aufweise, wohin gegen wenige Gene in hoher Zahl exprimiert sind. Dadurch erhalten wir eine rechtschiefe Verteilung, also keine Normalverteilung. Die Varianz in RNA Experimenten ist ebenfalls sehr groß. Dieses Phänomen ist auch als Overdispersion bekannt. Dieses Phänoment konnten wir an unserem Datensatz gut erkennen( siehe Zusatzinfo aus der Vorlesung)
 
-Herkömmliche Verteilungen , wie Normal- oder Possion Verteilung können daher nicht zur zur statistischen Berechnungen herangezogen werden.. Vielmehr ist die negative Negative-Binomial-Verteilung dazu geeignet, um die Overdispersion zu modellieren.
+Herkömmliche Verteilungen , wie Normal- oder Possion Verteilung, können daher nicht zur zur statistischen Berechnungen herangezogen werden. Vielmehr ist die negative Negative-Binomial-Verteilung dazu geeignet, um die Overdispersion zu modellieren.
 
-DESeq2, ein statistisches Softwarepacket, verwendet eine eine solche negative Binomialverteilung, die speziell geeignet ist, um die Zählwerte von RNA-Seq-Daten (Count-Daten) zu modellieren.
+DESeq2, ein statistisches Softwarepaket, verwendet eine eine solche negative Binomialverteilung, die speziell geeignet ist, um die Zählwerte von RNA-Seq-Daten (Count-Daten) zu modellieren.
 
-Unterschiede in Sequenziertiefe und Library-Größe werden durch sogenannte Size Factors. korrigiert. Dadurch sind die Proben vergleichbar. Ausserdem kann DESeq2 die Overdispersion schätzen, wodurch sich die Genauigkeit der p Werte verbessert, welche benötigt werden , um Vergleiche zwischen den einzelnen Medikamentengruppen anstellen zu können. Daher sehen wir uns nun an, wie wir ein DESeq erstellen können
+Unterschiede in Sequenziertiefe und Library-Größe werden durch sogenannte Size Factorskorrigiert. Dadurch sind die Proben vergleichbar. Ausserdem kann DESeq2 die Overdispersion schätzen, wodurch sich die Genauigkeit der p Werte verbessert, welche benötigt werden , um Vergleiche zwischen den einzelnen Medikamentengruppen anstellen zu können. Daher sehen wir uns nun an, wie wir ein DESeq erstellen können
 
 [Erstellung DESeq2 Objekt]{.underline}
 
@@ -308,7 +312,7 @@ Um ein DESeq2-Objekt in R zu erstellen, benötigt man zwei Strukturen: die Zähl
 
 Das Design `~ Condition` legt fest, dass DESeq2 Unterschiede zwischen den Gruppen analysieren soll. (faktorielles Design). Es gibt noch weitere Designs
 
-`mcols(dds)` referenziert die Metadaten der Zeilen (Gene).
+`mcols(dds)` referenziert die Metadaten der Zeilen der Gen Matrix.
 
 Vorbereiten des DESeq2 Objektes
 
@@ -381,6 +385,14 @@ rlds <- assay(rld)
 vst_obj <- vst(dds)
 ```
 
+```{r}
+rlog_matrix <- assay(rld)
+head(rlog_matrix) 
+
+dds <- DESeq(dds)
+res <- results(dds)
+```
+
 [Erläuterung:]{.underline}
 
 DESeq2 steht für Differential Expression analysis using Sequencing data – Version 2
@@ -407,7 +419,7 @@ Bei Genen mit **wenig Counts** oder **hoher Streuung** sind die LFC-Schätzungen
 
 Wir wollen dann wissen, ob der LFC signifikant von Null abweicht.
 
-Dazu wenden wir den Wald Test an. Der Wald Test kann angewandt werden, da folgende Vorraussetzhungen erfüllt sind: Wir haben genügend biologische Rplikate, es gibt keine Ausreiser ( siehe Boxplot), die Verteilung der Daten folgt einer Negativen Bionominalverteilung.
+Dazu wenden wir den Wald Test an. Der Wald Test kann angewandt werden, da folgende Vorraussetzhungen erfüllt sind: Wir haben genügend biologische Replikate, es gibt keine Ausreiser ( siehe Boxplot), die Verteilung der Daten folgt einer Negativen Bionominalverteilung.
 
 Der Wald-Test prüft, ob der geschätzte Effekt (LFC) pro Gen signifikant von 0 abweicht.
 
@@ -494,7 +506,7 @@ Bevor wir mit der tatsächlichen DEG-Analyse fortfahren berechnen wir eine PCA u
 
 **Erstellt eine PCA und stellt diese als Abbildung im HTML Dokument dar.ngen für PCA wurden**
 
-*Voraussetzungen für die PCA wurden überprüft. Visuell kann man an den Boxplots erkennen, dass sich Mittelwert und Varianz der einzelnen Proben kaum unterscheiden. Maximum und Minimum der Proben sind ebenfalls jeweils fast gleich.*
+[*Voraussetzungen*]{.underline} *für die PCA wurden überprüft. Visuell kann man an den Boxplots erkennen, dass sich Mittelwert und Varianz der einzelnen Proben kaum unterscheiden. Maximum und Minimum der Proben sind ebenfalls jeweils fast gleich.*
 
 ```{r Voraussetzungen PCA prüfen}
 
@@ -544,11 +556,59 @@ KMO(datensatz)
 
 ## Resulat: Werte für alle Spalten größer 0,8 
 
-#Bartlett-Test (Korrelation ungleich Null?)
 
 ```
 
 ```         
+```
+
+```{r PCA erstellen Individuals Plot}
+#Zeigt die Proben (z. B. Patienten, Zellen, Experimente) in den neuen PCA-Koordinaten (PC1, PC2, …).
+#Dient dazu, Cluster, Ähnlichkeiten oder Ausreißer zu erkennen.
+
+install.packages("FactoMineR")
+install.packages("ggplot2")
+install.packages("factoextra")  # optional für visuelle Extras
+
+library(FactoMineR)
+library(ggplot2)
+library(factoextra)
+
+# Verwende rlog Werte
+# rlog-Transformation (nur zur Erinnerung)
+ rlog_data <- rlog(dds, blind = TRUE)
+ # rlog-Matrix extrahieren
+expr_matrix <- assay(rlog_data)  # Gene = Zeilen, Proben = Spalten
+
+# Transponieren: Proben als Zeilen, Gene als Spalten
+expr_t <- t(expr_matrix)
+
+#PCA mit Factor Mine 
+# PCA durchführen mit Proben als Individuals
+pca <- PCA(expr_t, graph = FALSE, scale.unit = TRUE)
+
+#Indiciduals Graph Plotten
+
+# Koordinaten der Proben auf den ersten beiden PCs extrahieren
+ind_coords <- as.data.frame(pca$ind$coord)
+ind_coords$Sample <- rownames(ind_coords)
+
+# Optional: Metadaten hinzufügen (z.B. Bedingung, Gruppe)
+metadata <- colData(rlog_data)  # falls vorhanden
+ind_coords$Condition <- metadata$condition
+
+# Plot mit ggplot2
+ggplot(ind_coords, aes(x = Dim.1, y = Dim.2, label = Sample)) +
+  geom_point(size = 3, color = "steelblue") +
+  geom_text(vjust = -0.5, size = 3) +
+  labs(title = "PCA – Individuals Graph (Proben)",
+       x = paste0("PC1 (", round(pca$eig[1,2], 1), "%)"),
+       y = paste0("PC2 (", round(pca$eig[2,2], 1), "%)")) +
+  theme_minimal()
+
+#Plot Exportieren
+
+
 ```
 
 ```{r Überprüfung PC anhand der Achsenbeschriftung}
@@ -563,12 +623,17 @@ pca$eig  # Zeigt Varianz und kumulierte Varianz jeder Dimension
 
 ```{r  Überprüfung PC durch Clustering nach Gruppen}
 
+
 #Clustern die Proben erwartungsgemäß?
 #Wenn du z. B. Kontroll- und Behandlungsgruppen hast, sollten sich ähnliche Proben gruppieren.
  condition = factor(rep(c(group),each = 2))
 
 ggplot(ind_coords, aes(x = Dim.1, y = Dim.2, color = condition)) +
   geom_point()
+# Anwort: nur bei SO ist Gruppierung erkennbar 
+
+
+
 # Anwort: nur bei SO ist Gruppierung erkennbar 
 ```
 
@@ -662,6 +727,11 @@ ggsave(
 
 ```
 
+```{r}
+pca_plot
+
+```
+
 :
 
 [Interpretation PCA]{.underline}
@@ -725,13 +795,6 @@ resLFC_tram_dmso.final <- resLFC_tram_dmso[which(resLFC_tram_dmso$padj <= 0.05 &
 
 ```
 
-```         
-```
-
-```{r allgemeine Infos über unseren Datensatz}
-summary(res)
-```
-
 [Exkurs: Wald Test]{.underline}
 
 Für jedes Gen schätzt DESeq2 ein negativ-binomiales Modell, typischerweise so:
@@ -791,6 +854,10 @@ Anzahl Gene, die von Tram hochreguliert werden: 258
 Anzahl Gene, die von Tram herunterreguliert werden: 546
 
 ```{r}
+
+```
+
+```{r}
 so_up_anz <- nrow(resLFC_sora_dmso.final.up)
 so_down_anz <- nrow(resLFC_sora_dmso.final.down)
 
@@ -825,6 +892,18 @@ ggplot(daten, aes(x = Gruppe, y = Anzahl, fill = Regulation)) +
 
 ```
 
+#### **Verhältnis "down" vs. "up"**:
+
+-   
+
+-   In **beiden Gruppen überwiegt die Herunterregulation**.
+
+    Sora: 2014 "down" vs. 1541 "up" (\~57% vs. 43%)
+
+    Tram: 546 "down" vs. 258 "up" (\~68% vs. 32%)
+
+    -   Dies deutet darauf hin, dass **beide Wirkstoffe eher repressive Effekte auf die Genexpression** haben – stärker bei **Trametinib**.
+
 ### Identifizierte DEGs als Tabellen
 
 #### Sorafenib vs. DMSO
@@ -835,25 +914,35 @@ library(knitr)
 df_up <- resLFC_sora_dmso.final.up%>% 
 mutate(log2FoldChange_new = format(log2FoldChange, digits = 2)) %>% 
   mutate(padj_new = format(padj, scientific = TRUE, digits = 2))
-
-
+names(df_up)
+df_up_sort <-df_up[order(df_up$padj, decreasing = FALSE), ]
+  
 df_down <- resLFC_sora_dmso.final.down%>% 
 mutate(log2FoldChange_new = format(log2FoldChange, digits = 2)) %>% 
   mutate(padj_new = format(padj, scientific = TRUE, digits = 2))
+df_down_sort <-df_down[order(df_down$padj, decreasing = FALSE), ]
 
 
 #resLFC_sora_dmso.final.down
 cat("<h2>Signifikant hochregulierte Gene Sora versus DMSO</h2>")
 
-kable(df_up[,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol", "log2FC", "adj. p-value")) %>%
+kable(df_up_sort[,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol(H )", "log2FC", "adj. p-value")) %>%
   kable_styling() %>% scroll_box(width = "100%", height = "800px")
 
 cat("<h2>Signifikant runter regulierte Gene Sora versus DMSO</h2>")
 
-kable(df_down[,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol", "log2FC", "adj. p-value")) %>%
+kable(df_down_sort
+      [,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol(R-Gene)", "log2FC", "adj. p-value")) %>%
   kable_styling() %>% scroll_box(width = "100%", height = "800px")
+
   
 ```
+
+[Anmerkung]{.underline}
+
+Tabelle mit den unter Sora runterregulierten Genen ist nach adj. p Wert sortiert (Signifikanz). TNS4 weist eine hochsignifikante Veränderung der Genexpression (Runterregulation) auf, ebenso das MYC Gen (Protoonkogen, wird herunterreguliert).
+
+Die Zahlen der Tabelle werden auch graphisch in denVulcano Plots Sichtbar.
 
 #### Trametinib vs. DMSO
 
@@ -866,17 +955,25 @@ mutate(log2FoldChange_new = format(log2FoldChange, digits = 2)) %>%
 df_down <- resLFC_tram_dmso.final.down%>% 
 mutate(log2FoldChange_new = format(log2FoldChange, digits = 2)) %>% 
   mutate(padj_new = format(padj, scientific = TRUE, digits = 2))
+df_up_sort <-df_up[order(df_up$padj, decreasing = FALSE), ]
+df_down_sort <-df_down[order(df_down$padj, decreasing = FALSE), ]
+  
+  
 
 
 #resLFC_sora_dmso.final.down
-kable(df_up[,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol", "log2FC", "adj. p-value")) %>%
+kable(df_up_sort[,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol(H)", "log2FC", "adj. p-value")) %>%
   kable_styling() %>% scroll_box(width = "100%", height = "800px")
 
-kable(df_down[,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol", "log2FC", "adj. p-value")) %>%
+kable(df_down_sort[,c("Symbol", "log2FoldChange_new", "padj_new")], row.names = FALSE, "html", col.names = c("Symbol(R)", "log2FC", "adj. p-value")) %>%
   kable_styling() %>% scroll_box(width = "100%", height = "800px")
 
 
 ```
+
+[Anmerkung:]{.underline}
+
+Man erkennt mit Hilfe der Tabellen, dass es Gene gibt, die von Sora und Tram gemeinsam herunterreguliert werden (TNS4,FOSL1,KIAA0040)
 
 ### Visuelle Darstellung: Volcano Plot
 
@@ -957,6 +1054,122 @@ Erläuterung:
 
 -   Gene aus Aufgabenstellung sind allerdings nicht dabei
 
+-   
+
+    ### Alternative Darstellung Vulcano-Plot ( Sora gegen DMSO)
+
+    ```{r}
+    head(resLFC_sora_dmso.final)
+    ```
+
+    ```{r Vorbereitung Vulcano}
+    get_vul_daten <- function (df_daten) {
+      #df_sel <- data.frame(df_daten[, 2], df_daten[, 3], df_daten[, 5])
+       df_sel <- data.frame(df_daten[, 4],df_daten[, 6], df_daten[, 7], df_daten[, 9])
+      df_sel %>%
+        mutate(across(where(is.numeric), ~ replace_na(., 0))) %>%
+        filter(df_daten[, 9] < 0.05)
+      return(df_sel)
+      
+      
+    }
+    add_gene_id <- function(df, col_name = "ENSEMBL") {
+     # for (i in 1:nrow(df)) {
+    #    aktuelle_zeile_name <- rownames(df)[i]
+        
+    #  }
+    #  df$ENSEMBL <- rownames(df)
+      colnames(df) <- c("ENSEMBL","log2FoldChange", "lfcSE", "padj")
+      return(df)
+    }
+
+    cleanTable <- function(df, anz_ges, probe) {
+      df_up <- select(df, Symbol, log2FoldChange, padj)
+      df_up_ohne_na <- drop_na(df_up)
+      return (df_up_ohne_na)
+    }
+
+
+    ```
+
+    ```{r}
+    df_1 <- get_vul_daten(resLFC_sora_dmso.final)
+    ##head(df_1)
+    df_2 <- add_gene_id(df_1)
+
+    df_3 <- inner_join(x = df_2,
+                       y = geneMat,
+                       by = c("ENSEMBL" = "ENSEMBL")) %>%
+      select(ENSEMBL, Symbol, log2FoldChange, lfcSE, padj)
+
+    df_4 <- cleanTable(df_3, nrow(resLFC_sora_dmso.final), "SO gegen DMSO")
+    df_res_SO_vulc<- df_4%>% 
+      mutate(minus_log10_p = -log10(df_4$padj)) 
+
+    ```
+
+    ```{r}
+    library(ggplot2)
+    library(ggrepel)
+     alpha_val = 0.05
+
+    # Erstelle den Volcano Plot
+    ggplot(df_res_SO_vulc, aes(x=log2FoldChange, y=minus_log10_p)) +
+      geom_point(alpha=0.6, size=1.5) +
+      # Optional: Farben nach Signifikanz
+      aes(color=padj < 0.05) +
+      scale_color_manual(values=c("red", "gray")) +
+      # Textlabels für signifikante Gene
+      geom_text_repel(
+        #data=subset(df_res_SO, padj < 0.001 & abs(log2FoldChange) > 1),
+        data=subset(df_res_SO_vulc, padj < alpha_val & abs(log2FoldChange) > 1),
+        aes(label=Symbol),
+        size=3,
+        max.overlaps=25
+      )
+
+    ```
+
+    ```         
+    ```
+
+[Interpretation]{.underline}
+
+-   **Runterreguliert (links)**:
+
+    **TNS4**, **MYC**, **FOSL1** – diese Gene sind signifikant **weniger exprimiert**.
+
+-   **Hochreguliert (rechts)**:
+
+    **PCK1**, **NEU4**, **GPRIN2** – diese Gene sind signifikant **mehr exprimiert**.
+
+## **Stark herunterregulierte Gene (links im Plot)**
+
+Diese Gene haben **negative log2FoldChange-Werte** → ihre Expression ist **deutlich reduziert**.
+
+| Gen | Bedeutung / Funktion | Mögliche Interpretation |
+|----|----|----|
+| **TNS4** | *Tensin 4* – beteiligt an Zelladhäsion und Zellmigration | Reduzierte Zellbeweglichkeit |
+| **FOSL1** | *Transkriptionsfaktor, AP-1-Komplex* | Hemmung von Zellwachstum oder Stressantwort |
+| **MYC** | Proto-Onkogen, zentraler Regulator des Zellwachstums | **Sehr relevant** – häufig bei Krebs überexprimiert; Herunterregulierung könnte antiproliferativ wirken |
+| **DUSP4/DUSP2** | *Dual-specificity Phosphatase* – hemmen MAPK-Signalwege | Regulieren Zellteilung und Immunantwort; Runterregulierung → gestörte Signalverarbeitung |
+| **ETV5 / EGR1 / SPRY4** | Transkriptionsfaktoren oder Signalwegregulatoren (z. B. FGF/MAPK) | Kontrollieren Differenzierung, Wachstum; verminderte Aktivität könnte Differenzierung hemmen |
+| **LIF** | *Leukemia Inhibitory Factor* – Zytokin, wirkt auf Stammzellnischen | Weniger LIF → reduzierte Stammzellaktivität oder Differenzierung |
+
+## **Stark hochregulierte Gene (rechts im Plot)**
+
+Diese Gene haben **positive log2FoldChange-Werte** → ihre Expression ist **deutlich erhöht**.
+
+| Gen | Bedeutung / Funktion | Mögliche Interpretation |
+|----|----|----|
+| **PCK1** | *Phosphoenolpyruvat-Carboxykinase* – wichtig in der Glukoneogenese (Zuckerneubildung) | Hinweis auf metabolische Umstellung, z. B. bei Fasten, Diabetes oder Tumorzellen |
+| **NEU4** | *Neuraminidase 4* – spielt eine Rolle bei der Zellmembran-Modifikation | Kann Signalverarbeitung oder Immunantwort beeinflussen |
+| **GPRIN2** | *G Protein-Regulated Inducer of Neurite Outgrowth* | Beteiligung an neuronaler Entwicklung oder Signalübertragung |
+| **RBBP8NL** | *Chromatin-assoziiertes Protein* | Möglicherweise epigenetische Regulation |
+| **CDX2** | *Transkriptionsfaktor, wichtig in der Darmentwicklung* | Hochreguliert in manchen Tumoren oder Differenzierungsprozessen |
+| **CYP1A1** | *Cytochrom P450* – Detoxifikation, Stoffwechsel von Xenobiotika | Hochregulation → Reaktion auf Toxine oder Umwelteinflüsse |
+| **BNIP5 / BMF** | *Pro-apoptotische Gene* | Könnte auf gesteigerte Apoptose (Zelltod) hinweisen |
+
 #### Volcano Plot: Trametinib vs DMSO
 
 ```{r}
@@ -985,7 +1198,7 @@ volcano_tram
 
 ```
 
-[Erläuterung des Plots:]{.underline}
+![](images/clipboard-4070332211.png)[Erläuterung des Plots:]{.underline}
 
 Vergleich der Genexpression zwischen Zellen, die mit Trametinib (ein MEK-Inhibitor) behandelt wurden, und Zellen mit DMSO (Kontrolle).
 
@@ -1042,6 +1255,46 @@ Auf der x-Achse ist der Log₂-Fold Change (log₂FC) abgetragen- Positive Werte
 -   **ARHGEF10L** (vollständig: Rho Guanine Nucleotide Exchange Factor 10 Like) ist ein menschliches Gen, das ein Rho-GEF-Protein (Guanin-Nukleotid-Austauschfaktor) kodiert. Es gehört zur Familie der RhoGEFs, die eine wichtige Rolle in der Signalübertragung innerhalb der Zelle spielen – insbesondere bei der Regulation des Zytoskeletts, der Zellform, Zellbewegung und Zellproliferation.
 
     Gene aus Aufgabenstellung sind allerdings nicht dabei
+
+    ### Alternative Darstellung Vulcano Plot Tram versus DMSO
+
+    ```{r}
+    df_1 <- get_vul_daten(resLFC_tram_dmso.final)
+    ##head(df_1)
+    df_2 <- add_gene_id(df_1)
+
+    df_3 <- inner_join(x = df_2,
+                       y = geneMat,
+                       by = c("ENSEMBL" = "ENSEMBL")) %>%
+      select(ENSEMBL, Symbol, log2FoldChange, lfcSE, padj)
+
+    df_4 <- cleanTable(df_3, nrow(resLFC_sora_tram.final), "Tram gegen DMSO")
+    df_res_TR_vulc<- df_4%>% 
+      mutate(minus_log10_p = -log10(df_4$padj)) 
+
+
+    ```
+
+    ```{r}
+     alpha_val = 0.05
+
+    # Erstelle den Volcano Plot
+    ggplot(df_res_TR_vulc, aes(x=log2FoldChange, y=minus_log10_p)) +
+      geom_point(alpha=0.6, size=1.5) +
+      # Optional: Farben nach Signifikanz
+      aes(color=padj < 0.05) +
+      scale_color_manual(values=c("red", "gray")) +
+      # Textlabels für signifikante Gene
+      geom_text_repel(
+        #data=subset(df_res_SO, padj < 0.001 & abs(log2FoldChange) > 1),
+        data=subset(df_res_TR_vulc, padj < alpha_val & abs(log2FoldChange) > 1),
+        aes(label=Symbol),
+        size=3,
+        max.overlaps=25
+      )
+    ```
+
+-   ![](images/clipboard-1818684831.png)
 
     <div>
 
@@ -1105,8 +1358,6 @@ deg_down <- list(
 upset_plot_up <- upset(fromList(deg_up))
 upset_out_up <- upSetSets(deg_up)
 
-upset_plot_down <- upset(fromList(deg_down))
-upset_out_down <- upSetSets(deg_down)
 
 df_set_hoch_beide_ens <-data.frame(upset_out_up[[3]])  
 colnames(df_set_hoch_beide_ens) <- c('ENSEMBL')                                   
@@ -1121,6 +1372,11 @@ df_set_down_both <- inner_join(x = df_set_runter_beide_ens,
                    by = c("ENSEMBL" = "ENSEMBL"))
 
 
+
+```
+
+```{r}
+names(upset_out_up)
 
 ```
 
@@ -1174,11 +1430,51 @@ upset_plot_up
 
 ![](images/clipboard-3762531266.png)
 
+[Interpretation]{.underline}
+
+-   **Sorafenib** enthält die meisten Elemente (ca. 1500).
+
+-   **Trametinib** ist deutlich kleiner (ca. 200).
+
+-   Die **gemeinsame Schnittmenge** beträgt **241**, was relativ groß ist im Verhältnis zur Gesamtgröße von Trametinib (d. h. \> 100 % – vermutlich doppelte Zählung oder ein anderer Referenzrahmen?).
+
+-   **Nur 12 Gene** sind **spezifisch für Trametinib**, und **1295 Gene** sind **spezifisch für Sorafenib**.
+
+-   **Mögliche Bedeutung (z. B. bei Genanalysen):**
+
+    Viele Gene, die bei **Trametinib** reguliert sind, werden **auch bei Sorafenib** reguliert → potenzielle Gemeinsamkeiten in der Wirkweise.
+
+    Es gibt jedoch auch **substanzspezifische Unterschiede**.s
+
+-   
+
 #### Durch beide Medikamente runter-regulierte Gene
 
 ```{r}
 upset_plot_down
 ```
+
+![](http://127.0.0.1:37555/chunk_output/608A17CA99518554/A0FD2F1C/czhbmk5gkvqzc/000010.png)
+
+[Interpretation]{.underline}
+
+nur von Sora runterregulierte Gene: 1500
+
+nur von Tram runterregulierte Gene: 32
+
+von Sora und Tram runterregulierte Gene: 514
+
+1500 + 514 = 2014 (Gene , die von Sora herunterreguliert werden)
+
+514 + 32 = 546 (Gene , die von Tram herunterreguliert werden)
+
+Was wir oben auch schon gesehen haben. Konsistenz liegt vor
+
+-   **Sorafenib_vs_DMSO** enthält die meisten differentiell exprimierten Gene (ca. 2000), davon **1500 nur in dieser Gruppe**.
+
+<!-- -->
+
+-    **Trametinib_vs_DMSO** hat ca. 600 Gene, davon **514 exklusiv**. Nur **32 Gene sind in beiden Gruppen gemeinsam differentiell exprimiert** – dies deutet auf relativ unterschiedliche Wirkmechanismen oder Genantworten der beiden Wirkstoffe hin.
 
 Jetzt kennen wir die Gene, die entweder durch beiden Medikamente oder auch nur in dem einen oder dem anderen verändert sind. Aber was machen wir jetzt damit? Wir können uns z.B. der Ressource *"Molecular Signatures Database"* (MSigDB) bedienen.
 
@@ -1270,13 +1566,13 @@ hyperG <- function(geneSets,DEgenes,universe, cutoff=0.1, mincount=2, parallel=T
 ```
 
 ```{r}
-plot_pathway <- function(hallmark, genset,universe,label,top, color){
+plot_pathway <- function(hallmark, genset,universe,label,top, color,cut_off ){
   results<- hyperG(
   geneSets = hallmark,
   DEgenes = genset,
   universe = universe,
-  cutoff = 0.1,            # z.B. ein strengerer cutoff
- # mincount = 2,             # Mindestanzahl Gene pro Set
+  cutoff = cut_off,            # z.B. ein strengerer cutoff
+  mincount = 2,             # Mindestanzahl Gene pro Set
   parallel = FALSE,          # Parallele Berechnung
   adj.P.Val = TRUE         # Adjustierte p-Werte berücksichtigen
   #set.size = c(10, 500)     # Nur Sets mit 10–500 Genen berücksichtigen
@@ -1347,16 +1643,13 @@ Um die Funktion `hyperG()` ausführen zu können brauchen wir jetzt noch ein sog
 
 ```{r}
 library(parallel)
-universe <- na.omit(geneMat$Symbol)
+#universe <- na.omit(geneMat$Symbol)
 ensembl_ids <- rownames(dds)
 universe_df <- tibble(ENSEMBL = ensembl_ids) |>
          left_join(geneMat[, c("ENSEMBL", "Symbol")], by = "ENSEMBL")
 
-#universe <- universe_df$Symbol|> unique() |> na.omit
-
-universe <- unique(na.omit(universe_df$Symbol))
-
-plot_pathway(hallmark, df_set_up_both$Symbol,universe,"Top 10 angereicherte Hallmarks von Tra und Sora", 10, "skyblue1" )
+universe <- universe_df$Symbol|> unique() 
+universe <- universe |> na.omit()
 
 
 
@@ -1366,7 +1659,7 @@ plot_pathway(hallmark, df_set_up_both$Symbol,universe,"Top 10 angereicherte Hall
 
 ```{r}
 
-plot_pathway(hallmark, df_set_up_both$Symbol,universe,"Top 10 angereicherte Hallmarks von Tra und Sora", 10, "skyblue1" )
+plot_pathway(hallmark, df_set_up_both$Symbol,universe,"Top 10 angereicherte Hallmarks von Tra und Sora", 10, "skyblue1" ,0.5)
 
 
 
@@ -1375,15 +1668,14 @@ plot_pathway(hallmark, df_set_up_both$Symbol,universe,"Top 10 angereicherte Hall
 
 ```
 
-Anmerkung: Im Upset Plot sieht man, dass nur 12 Gene gemeinsam von Sora und Tram hoch exprimiert werden. Es ist unwahrscheinlich, dass diese 12 Gene einen Pathway beeinflussen.
-
 ```         
+Anmerkung: Bei cutoff = 0.1 werden mir keine Pathways angezeigt
 ```
 
 #### Gemeinsamkeiten: Durch beide Medikamente runter-regulierte Hallmark Gensets
 
 ```{r}
-plot_pathway(hallmark, df_set_down_both$Symbol,universe,"Top 10 runter regulierte Hallmarks von Tra und Sora", 10, "skyblue1" )
+plot_pathway(hallmark, df_set_down_both$Symbol,universe,"Top 10 runter regulierte Hallmarks von Tra und Sora", 10, "skyblue1" ,0.1)
 
 
 ```
@@ -1394,25 +1686,25 @@ plot_pathway(hallmark, df_set_down_both$Symbol,universe,"Top 10 runter reguliert
 
 ```{r}
 
-plot_pathway(hallmark, resLFC_sora_dmso.final.down$Symbol,universe,"Down regulierte Hallmark-Gensets von Sora", 10, "skyblue2" )
+plot_pathway(hallmark, resLFC_sora_dmso.final.down$Symbol,universe,"Down regulierte Hallmark-Gensets von Sora", 10, "skyblue2",0.1 )
 ```
 
 **Von Sorafenib hochreguliert:**
 
 ```{r}
-plot_pathway(hallmark, resLFC_sora_dmso.final.up$Symbol,universe,"Top 10 angereicherte Hallmark-Gensets von Sora", 10, "skyblue2" )
+plot_pathway(hallmark, resLFC_sora_dmso.final.up$Symbol,universe,"Top 10 angereicherte Hallmark-Gensets von Sora", 10, "skyblue2", 0.1 )
 ```
 
 **Von Trametinib hochreguliert:**
 
 ```{r}
-plot_pathway(hallmark, resLFC_tram_dmso.final.up$Symbol,universe,"Angereicherte Hallmark-Gensets von Tram", 10, "skyblue2")
+plot_pathway(hallmark, resLFC_tram_dmso.final.up$Symbol,universe,"Angereicherte Hallmark-Gensets von Tram", 10, "skyblue2",0.5)
 ```
 
 **Von Trametinib runterreguliert:**
 
 ```{r}
-plot_pathway(hallmark, resLFC_tram_dmso.final.down$Symbol,universe,"Down regulierte Hallmark-Gensets von Tram", 10, "skyblue2")
+plot_pathway(hallmark, resLFC_tram_dmso.final.down$Symbol,universe,"Down regulierte Hallmark-Gensets von Tram", 10, "skyblue2",0.1)
 ```
 
 ```{r}
@@ -1480,14 +1772,17 @@ ggsave(
 p_common_up
 ```
 
+![](images/clipboard-3060932773.png)
+
 #### **2.4.1.4 Unterschiede 1: Nur in Sorafenib hoch-regulierte Hallmark Gensets**
 
 ```{r}
 sora_up_hyp <- hyperG(
   geneSets = hallmark,
   DEgenes = df_sora_up$Symbol,
+  
   universe = universe,
-  cutoff = 0.1,
+  cutoff = 1,
   mincount = 2,
   parallel = F,
   set.size = c(10,500)
@@ -1522,7 +1817,7 @@ sora_up_plot <- ggplot(df_top) +
     midpoint = (range(df_top$logP)[1] + range(df_top$logP)[2]) / 2) +
   theme_bw() +
   labs(
-    title = "Hallmark Gene Sets",
+    title = "Hallmark Gene Sets Sora up ",
     x = "Ratio",
     y = "Gene Set",
     size = "Count",
@@ -1544,6 +1839,8 @@ ggsave(
 sora_up_plot
 ```
 
+![](images/clipboard-989977573.png)
+
 #### **2.4.1.5 Unterschiede 2: Nur in Trametinib hoch-regulierte Hallmark Gensets**
 
 ```{r}
@@ -1551,11 +1848,15 @@ tram_up_hyp <- hyperG(
   geneSets = hallmark,
   DEgenes = df_tram_up$Symbol,
   universe = universe,
-  cutoff = 0.1,
+  cutoff = 0.0001,
   mincount = 2,
   parallel = F,
   set.size = c(10,500)
 )
+```
+
+```{r}
+
 df <- tram_up_hyp
 df$ratio <- df$Size / length(universe)
 df_top <- df
@@ -1582,7 +1883,7 @@ tram_up_plot <- ggplot(df_top) +
     midpoint = (range(df_top$logP)[1] + range(df_top$logP)[2]) / 2) +
   theme_bw() +
   labs(
-    title = "Hallmark Gene Sets",
+    title = "Hallmark Gene Sets Tram Up",
     x = "Ratio",
     y = "Gene Set",
     size = "Count",
@@ -1603,6 +1904,8 @@ ggsave(
 ```{r}
 tram_up_plot
 ```
+
+Für Tram keine hochregulierten Pathways gefunden
 
 #### **2.4.1.6 Gemeinsamkeiten: Durch beide Medikamente runter-regulierte Hallmark Gensets**
 
@@ -1669,6 +1972,8 @@ ggsave(
 common_down_plot
 ```
 
+![](images/clipboard-157060531.png)
+
 #### **2.4.1.7 Unterschiede 1: Nur in Sorafenib runter-regulierte Hallmark Gensets**
 
 ```{r}
@@ -1711,7 +2016,7 @@ sora_down_plot <- ggplot(df_top) +
     midpoint = (range(df_top$logP)[1] + range(df_top$logP)[2]) / 2) +
   theme_bw() +
   labs(
-    title = "Hallmark Gene Sets",
+    title = "Hallmark Gene Sets Sora Down",
     x = "Ratio",
     y = "Gene Set",
     size = "Count",
@@ -1733,12 +2038,15 @@ ggsave(
 sora_down_plot
 ```
 
+![](images/clipboard-1171102807.png)
+
 #### **2.4.1.8 Unterschiede 2: Nur in Trametinib runter-regulierte Hallmark Gensets**
 
 ```{r}
-tram_down_hyper <- hyperG(
+tram_down_hyp <- hyperG(
   geneSets = hallmark,
-  DEgenes =  df_tram_down$Symbol,
+ # DEgenes = df_tram_down$Symbol,
+  DEgenes = resLFC_tram_dmso.final.down$Symbol,
   universe = universe,
   cutoff = 0.1,
   mincount = 2,
@@ -1748,7 +2056,7 @@ tram_down_hyper <- hyperG(
 ```
 
 ```{r}
-df <- tram_down_hyper
+df <- tram_down_hyp
 df$ratio <- df$Size / length(universe)
 df_top <- df
 df_top$Pathway <- gsub(pattern = "HALLMARK_", replacement = "", x = df_top$Term)
@@ -1758,7 +2066,7 @@ df_top$logP <- -log10(df_top$adj.P.Val)
 df_top$logP[df_top$logP == Inf] <- 20
   
 # plot
-tram_down_plot <- ggplot(df_top) +
+tram_down_plot_1 <- ggplot(df_top) +
   geom_point(
     aes(
       x = ratio,
@@ -1774,7 +2082,7 @@ tram_down_plot <- ggplot(df_top) +
     midpoint = (range(df_top$logP)[1] + range(df_top$logP)[2]) / 2) +
   theme_bw() +
   labs(
-    title = "Hallmark Gene Sets",
+    title = "Hallmark Gene Sets Tram down",
     x = "Ratio",
     y = "Gene Set",
     size = "Count",
@@ -1786,15 +2094,17 @@ ggsave(
     gseaDIR,
     "only_down_regulated_Trametinib_Hallmarks.pdf"
   ),
-  plot = tram_down_plot,
+  plot = tram_down_plot_1,
   device = "pdf",
   dpi = "retina"
 )
 ```
 
 ```{r}
-tram_down_plot
+tram_down_plot_1
 ```
+
+![](images/clipboard-1477509847.png)
 
 [Bedeutung der Gene, in der Aufgabenstellung genannt werden:]{.underline}
 
@@ -1807,6 +2117,26 @@ BRAF ist ein Proto-Onkogen, das ein Serin/Threonin-Kinase-Protein codiert.Es ist
 Eine KRAS-Mutation ist eine Veränderung im KRAS-Gen, die bei vielen Krebsarten eine Rolle spielt, insbesondere bei Lungen-, Darm- und Bauchspeicheldrüsenkrebs. KRAS ist ein Protein, das an der Signalübertragung beteiligt ist und das Zellwachstum reguliert. Mutationen können dazu führen, dass das Protein dauerhaft aktiviert ist und unkontrolliertes Zellwachstum fördert. Die Bezeichnung G12A bedeutet, dass an Position 12 der Aminosäuresequenz die Glycin (G)-Aminosäure durch Alanin (A) ersetzt wurde – das ist eine Punktmutation. Diese ist jedoch aktuell schwer direkt behandelbar („undruggable“), obwohl an Therapien geforscht wird.
 
 ***TP53^R175H^*** ist eine spezifische Mutation (Punktmutation) im TP53-Gen, die auch als p53-R175H bekannt ist. Diese Mutation tritt häufig in verschiedenen Krebsarten auf und wird als "Hotspot-Mutation" bezeichnet, da sie in der DNA-Bindungsdomäne des p53-Proteins liegt
+
+[Medikamente]{.underline}
+
+**Sorafenib** stoppt die vermehrte [Zellteilung](https://flexikon.doccheck.com/de/Zellteilung) und unterbindet die Blutversorgung des [Tumors](https://flexikon.doccheck.com/de/Tumor). Die Substanz soll über einen dualen Wirkmechanismus verfügen:
+
+-   Sorafenib unterbricht den Signalweg, der die Tumorzelle zu fortgesetzter Teilung anregt. Genauer Angriffspunkt ist die [RAF-Kinase](https://flexikon.doccheck.com/index.php?title=RAF-Kinase&action=edit&redlink=1 "RAF-Kinase (Artikel jetzt erstellen...)"), die von Sorafenib gehemmt wird. Diese Kinase aktiviert eine Kaskade von Enzymen, die letztendlich im [Zellkern](https://flexikon.doccheck.com/de/Zellkern) die Zellteilung auslöst.
+
+-   Sorafenib hemmt die [Angioneogenese](https://flexikon.doccheck.com/de/Angioneogenese) des Tumors, indem die [intrazelluläre](https://flexikon.doccheck.com/de/Intrazellul%C3%A4r) [Tyrosinkinasedomäne](https://flexikon.doccheck.com/de/Tyrosinkinase) des [VEGF-Rezeptors](https://flexikon.doccheck.com/de/VEGF-Rezeptor) blockiert wird. Neu gebildete Tumorzellen werden nicht mehr an das Gefäßsystem angeschlossen, und daher nicht mit Nährstoffen versorgt.
+
+**Trametinib** ist ein [Arzneistoff](https://de.wikipedia.org/wiki/Arzneistoff "Arzneistoff") aus der Gruppe der Kinaseinhibitoren. Es wird allein oder in Kombination mit dem Arzneistoff [Dabrafenib](https://de.wikipedia.org/wiki/Dabrafenib "Dabrafenib") zur Behandlung einer bestimmten Hautkrebsart ([Melanom](https://de.wikipedia.org/wiki/Melanom "Melanom")) verwendet, die sich in andere Körperregionen ausgebreitet hat oder nicht durch eine Operation entfernt werden kann, und welche eine bestimmte Veränderung ([Mutation](https://de.wikipedia.org/wiki/Mutatio "Mutatio")) an der Position V600 des sogenannten [B-Raf](https://de.wikipedia.org/wiki/Raf_(Protein) "Raf (Protein)")-Gens aufweist. Ebenfalls in Kombination mit Dabrafenib wird Trametinib zur Behandlung des fortgeschrittenen [nicht-kleinzelligen Lungenkarzinoms](https://de.wikipedia.org/wiki/Bronchialkarzinom#Pathologie_der_Subtypen "Bronchialkarzinom") (NSCLC) mit B-Raf-V600-Mutation eingesetzt
+
+[Welche Gene werden von Trametinib hochreguliert ?]{.underline}
+
+Obwohl Trametinib hauptsächlich Gene herunterreguliert, die mit Zellproliferation und Überleben assoziiert sind, gibt es spezifische Gene wie ISG15 und PD-L1, deren Expression unter seiner Wirkung erhöht sein kann. Diese Veränderungen könnten potenziell therapeutische Implikationen haben, insbesondere in Kombination mit Immuntherapien
+
+[Welche Gene werden von Trametinib runterreguliert ?]{.underline}
+
+Trametinib führt typischerweise zur Herunterregulation von Genen, die durch den MAPK/ERK-Weg aktiviert werden und für Zellproliferation, Überleben und Migration wichtig sind. Dazu gehören Cyclin D1, MYC, EGR1, FOS, JUN und weitere mit Zellzyklus und Tumorprogression assoziierte Gene.
+
+( deckt sich mit dem, was wir mit der Analyse gefunden haben)
 
 ```{r}
 sessionInfo()
