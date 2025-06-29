@@ -1,7 +1,7 @@
 ---
 about: ---
 title: "RNA-Sequenzierungs-Analyse - Aufgaben"
-author: "Constanze Leichtweiß"
+author: "Constanze Leichtweiß (Gruppe 3)"
 format:
   html:
     toc: true
@@ -302,9 +302,9 @@ Ebenso variert die Anzahl exprimierter Gene Innerhalb der Probe. Es gibt sehr vi
 
 Herkömmliche Verteilungen , wie Normal- oder Possion Verteilung, können daher nicht zur zur statistischen Berechnungen herangezogen werden. Vielmehr ist die negative Negative-Binomial-Verteilung dazu geeignet, um die Overdispersion zu modellieren.
 
-DESeq2, ein statistisches Softwarepaket, verwendet eine eine solche negative Binomialverteilung, die speziell geeignet ist, um die Zählwerte von RNA-Seq-Daten (Count-Daten) zu modellieren.
+DESeq2, ein statistisches Softwarepaket, verwendet eine solche negative Binomialverteilung, die speziell geeignet ist, um die Zählwerte von RNA-Seq-Daten (Count-Daten) zu modellieren.
 
-Unterschiede in Sequenziertiefe und Library-Größe werden durch sogenannte Size Factorskorrigiert. Dadurch sind die Proben vergleichbar. Ausserdem kann DESeq2 die Overdispersion schätzen, wodurch sich die Genauigkeit der p Werte verbessert, welche benötigt werden , um Vergleiche zwischen den einzelnen Medikamentengruppen anstellen zu können. Daher sehen wir uns nun an, wie wir ein DESeq erstellen können
+Unterschiede in Sequenziertiefe und Library-Größe werden durch sogenannte Size Factors korrigiert. Dadurch sind die Proben vergleichbar. Ausserdem kann DESeq2 die Overdispersion schätzen, wodurch sich die Genauigkeit der p Werte verbessert, welche benötigt werden , um Vergleiche zwischen den einzelnen Medikamentengruppen anstellen zu können. Daher sehen wir uns nun an, wie wir ein DESeq erstellen können
 
 [Erstellung DESeq2 Objekt]{.underline}
 
@@ -415,7 +415,9 @@ LFC steht für Log2 Fold Change — also der logarithmische (zur Basis 2) Unters
 
 Shrinking (auch Shrinkage) in DESeq2 bedeutet, dass die geschätzten Log2 Fold Changes (LFCs) „verkleinert“ oder stabilisiert werden, besonders bei Genen mit niedrigem oder sehr variablen Signal.
 
-Bei Genen mit **wenig Counts** oder **hoher Streuung** sind die LFC-Schätzungen oft **extrem und unsicher**. Ohne Shrinking können solche Werte übertrieben groß sein und zu **falsch interpretierten Ergebnissen** führen. Die unsicheren Werte werden in Richtung Null gezogen
+Bei Genen mit **wenig Counts** oder **hoher Streuung** sind die LFC-Schätzungen oft **extrem und unsicher**. Ohne Shrinking können solche Werte übertrieben groß sein und zu **falsch interpretierten Ergebnissen** führen. Die unsicheren Werte werden in Richtung Null gezogen.
+
+Dabei ist anzumerken, dass Gene mit niedriger Expression eine größere Varianz , weil die Stochastik bei kleinen Zahlen dominiert und die Messmethoden bei schwachen Signalen ungenauer sind
 
 Wir wollen dann wissen, ob der LFC signifikant von Null abweicht.
 
@@ -424,6 +426,24 @@ Dazu wenden wir den Wald Test an. Der Wald Test kann angewandt werden, da folgen
 Der Wald-Test prüft, ob der geschätzte Effekt (LFC) pro Gen signifikant von 0 abweicht.
 
 Die rlog-Transformation dient dazu, die Zählwerte (Counts) aus RNA-Seq-Daten so umzuwandeln, dass sie für Visualisierungen und explorative Analysen besser geeignet sind – zum Beispiel für die PCA
+
+[Unterschied normalisierte Daten und transformierte Daten]{.underline}
+
+Das Ziel der Normalisierung ist die Korrektur für systematische Unterschiede in der Sequenzierungstiefe oder Library-Größe zwischen Proben.
+
+Ziel der Transformation ist die Stabilisierung der Varianz für Visualisierung und Clustering (z. B. PCA, Heatmaps).Diese transformierten Counts werden nicht für die differentielle Analyse verwendet, sondern für Explorative Analysen wie PCA oder Clustering.
+
+[Begriffe:]{.underline}
+
+**Sequenztiefe** (auch: Sequenzierungstiefe oder auf Englisch *sequencing depth* bzw. *coverage*) ist ein Begriff aus der Genomforschung und beschreibt, wie oft ein bestimmter Bereich des Genoms bei einer Sequenzierung gelesen wurde.
+
+Wenn ein DNA-Abschnitt 30-mal gelesen wurde, beträgt die Sequenztiefe 30x. Das bedeutet, dass im Durchschnitt jeder Basenpaar-Abschnitt 30 Mal abgedeckt wurde.
+
+**Genlänge** bezeichnet die Anzahl der Basenpaare (bp), aus denen ein bestimmtes Gen besteht – also wie lang die DNA-Sequenz eines Gens ist.
+
+[Warum weisen Gene mit niedriger Expression eine größere Variabilität auf ?]{.underline}
+
+Gene mit niedriger Expression haben eine größere Varianz, weil die Stochastik bei kleinen Zahlen dominiert und die Messmethoden bei schwachen Signalen ungenauer sind
 
 ### QC Plot vor und nach der Normalisierung
 
@@ -732,7 +752,7 @@ pca_plot
 
 ```
 
-:
+![](images/clipboard-1322382393.png)
 
 [Interpretation PCA]{.underline}
 
@@ -892,7 +912,7 @@ ggplot(daten, aes(x = Gruppe, y = Anzahl, fill = Regulation)) +
 
 ```
 
-#### **Verhältnis "down" vs. "up"**:
+#### ![](images/clipboard-4016379193.png)**Verhältnis "down" vs. "up"**:
 
 -   
 
@@ -1020,6 +1040,8 @@ volcano_sora
 
 ```
 
+![](images/clipboard-1376388871.png)
+
 Erläuterung:
 
 -   **Blau**: Gene mit **signifikantem p-Wert**, aber ohne starken Fold Change.
@@ -1031,7 +1053,7 @@ Erläuterung:
 -   **TNS4**, **FOSL1**, **IER3**, **PHC2**, **CDKN1B**, **PCK1**
 
 |  |  |  |  |  |
-|---------------|---------------|---------------|---------------|---------------|
+|----|----|----|----|----|
 |  |  |  |  |  |
 |  | **Gen** |  | **Funktion / Rolle** |  |
 |  |  |  |  |  |
@@ -1474,7 +1496,7 @@ Was wir oben auch schon gesehen haben. Konsistenz liegt vor
 
 <!-- -->
 
--    **Trametinib_vs_DMSO** hat ca. 600 Gene, davon **514 exklusiv**. Nur **32 Gene sind in beiden Gruppen gemeinsam differentiell exprimiert** – dies deutet auf relativ unterschiedliche Wirkmechanismen oder Genantworten der beiden Wirkstoffe hin.
+-   **Trametinib_vs_DMSO** hat ca. 600 Gene, davon **514 exklusiv**. Nur **32 Gene sind in beiden Gruppen gemeinsam differentiell exprimiert** – dies deutet auf relativ unterschiedliche Wirkmechanismen oder Genantworten der beiden Wirkstoffe hin.
 
 Jetzt kennen wir die Gene, die entweder durch beiden Medikamente oder auch nur in dem einen oder dem anderen verändert sind. Aber was machen wir jetzt damit? Wir können uns z.B. der Ressource *"Molecular Signatures Database"* (MSigDB) bedienen.
 
@@ -1680,20 +1702,20 @@ plot_pathway(hallmark, df_set_down_both$Symbol,universe,"Top 10 runter reguliert
 
 ```
 
-![](images/clipboard-2888101297.png)
-
-**Von Sorafenib herunterreguliert:**
+![](images/clipboard-1407208993.png)**Von Sorafenib herunterreguliert:**
 
 ```{r}
 
 plot_pathway(hallmark, resLFC_sora_dmso.final.down$Symbol,universe,"Down regulierte Hallmark-Gensets von Sora", 10, "skyblue2",0.1 )
 ```
 
-**Von Sorafenib hochreguliert:**
+![](images/clipboard-3232411906.png)**Von Sorafenib hochreguliert:**
 
 ```{r}
 plot_pathway(hallmark, resLFC_sora_dmso.final.up$Symbol,universe,"Top 10 angereicherte Hallmark-Gensets von Sora", 10, "skyblue2", 0.1 )
 ```
+
+![](images/clipboard-3178670481.png)
 
 **Von Trametinib hochreguliert:**
 
@@ -1701,15 +1723,20 @@ plot_pathway(hallmark, resLFC_sora_dmso.final.up$Symbol,universe,"Top 10 angerei
 plot_pathway(hallmark, resLFC_tram_dmso.final.up$Symbol,universe,"Angereicherte Hallmark-Gensets von Tram", 10, "skyblue2",0.5)
 ```
 
+![](images/clipboard-858884559.png)
+
 **Von Trametinib runterreguliert:**
 
 ```{r}
 plot_pathway(hallmark, resLFC_tram_dmso.final.down$Symbol,universe,"Down regulierte Hallmark-Gensets von Tram", 10, "skyblue2",0.1)
 ```
 
+![](images/clipboard-1530996741.png)
+
 ```{r}
 common_up <- hyperG(
-  geneSets = hallmark,
+
+    geneSets = hallmark,
   #DEgenes = upset_out_up$`Sorafenib_vs_DMSO-Trametinib_vs_DMSO`$ID,
   DEgenes = df_set_up_both$Symbol,
   universe = universe,
@@ -2137,6 +2164,8 @@ Obwohl Trametinib hauptsächlich Gene herunterreguliert, die mit Zellproliferati
 Trametinib führt typischerweise zur Herunterregulation von Genen, die durch den MAPK/ERK-Weg aktiviert werden und für Zellproliferation, Überleben und Migration wichtig sind. Dazu gehören Cyclin D1, MYC, EGR1, FOS, JUN und weitere mit Zellzyklus und Tumorprogression assoziierte Gene.
 
 ( deckt sich mit dem, was wir mit der Analyse gefunden haben)
+
+Begrenzung der Arbeit: Vielleicht sollte man mehr als zwei Replikate nehmen
 
 ```{r}
 sessionInfo()
